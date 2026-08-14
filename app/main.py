@@ -1,8 +1,9 @@
 import uvicorn
 from fastapi import FastAPI
+from app.exceptions.auth import InvalidCredentialsException
 from app.exceptions.user import UserNotFoundException
 from app.exceptions.product import ProductNotFoundException
-from app.exceptions.handlers import product_not_found_handler, user_not_found_handler
+from app.exceptions.handlers import invalid_credentials_handler, product_not_found_handler, user_not_found_handler
 from app.routers.user import router as user_router
 from app.routers.product import router as product_router
 from app.database.init_db import init_db
@@ -14,6 +15,7 @@ app = FastAPI(
 
 app.add_exception_handler(UserNotFoundException,user_not_found_handler)
 app.add_exception_handler(ProductNotFoundException,product_not_found_handler)
+app.add_exception_handler(InvalidCredentialsException,invalid_credentials_handler)
 
 init_db()
 

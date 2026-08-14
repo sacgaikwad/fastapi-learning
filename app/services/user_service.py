@@ -1,10 +1,17 @@
+from app.exceptions.auth import InvalidCredentialsException
 from app.exceptions.user import UserNotFoundException
 from app.repositories.user_repository import UserRepository
+from app.core.security import hash_password
+from app.core.security import verify_password
+
 from app.models.user import (
     UserRequest,
     UserResponse,
-    UserDetailResponse
+    UserDetailResponse,
+    LoginRequest,
+    LoginResponse
 )
+
 import logging
 
 class UserService:
@@ -37,7 +44,10 @@ class UserService:
     def create_user(self, user: UserRequest) -> UserResponse:
         # Business logic
         self.logger.info("Creating user with name: %s", user.name)
-        user_created = self.repository.create_user(user)
+
+        password_hashed = hash_password(user.password)
+
+        user_created = self.repository.create_user(user, password_hashed)
         return UserResponse(user_id=user_created.id)
 
     def update_user(self, user_id: int, user: UserRequest) -> UserResponse:
@@ -45,3 +55,24 @@ class UserService:
         self.logger.info("Updating user with ID: %d", user_id)
         user_updated = self.repository.update_user(user_id, user)
         return UserResponse(user_id=user_updated.id)
+
+    def login(self,login_request:LoginRequest) -> LoginResponse:
+        self.logger.info("Logging in user with email: %s", login_request.email)
+        user = self.repository.get_user_by_email(login_request.email)
+
+        if user is None:
+            self.logger.error("User with email %s not found", login_request.email)
+            raise InvalidCredentialsException()
+
+
+        if not verify_password(login_request.password, user["password_hash"]):
+            self.logger.error("Invalid password for user with email: %s", login_request.email)
+            raise InvalidCredentialsException()
+
+        self.logger.info("User with email %s logged in successfully", login_request.email)
+
+        return LoginResponse(
+                user_id=user["user_id"],
+                name=user["name"],
+                email=user["email"]
+            )

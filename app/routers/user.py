@@ -3,7 +3,9 @@ from fastapi import APIRouter, Depends, status
 from app.models.user import (
     UserRequest,
     UserResponse,
-    UserDetailResponse
+    UserDetailResponse,
+    LoginRequest,
+    LoginResponse
 )
 
 from app.dependencies.user import get_user_service
@@ -54,3 +56,11 @@ def update_user(
     service=Depends(get_user_service)
 ):
     return service.update_user(user_id, user)
+
+
+@router.post("/login", response_model=LoginResponse)
+def login(
+    login_request: LoginRequest,
+    service=Depends(get_user_service)
+):
+    return service.login(login_request)

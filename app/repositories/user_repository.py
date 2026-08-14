@@ -47,11 +47,11 @@ class UserRepository:
             self.logger.error("Error deleting user with ID %d: %s", user_id, str(e))
             raise e
 
-    def create_user(self, user: UserRequest):
+    def create_user(self, user: UserRequest, password_hashed: str):
 
-        self.logger.info("Creating user in database: %s", user)
+        self.logger.info("Creating user in database with email: %s",user.email)
 
-        db_user = User(name =user.name, age=user.age, email=user.email)
+        db_user = User(name =user.name, age=user.age, email=user.email, password_hash=password_hashed)
         self.db.add(db_user)
         self.db.commit()
         self.db.refresh(db_user)
@@ -78,3 +78,21 @@ class UserRepository:
 
         self.logger.info("User with ID %d updated successfully.", user_id)
         return db_user
+
+    def get_user_by_email(self, email: str):
+
+        self.logger.info("Fetching user with email from database: %s", email)
+
+        user = self.db.query(User).filter(User.email == email).first()
+
+        if user is None:
+            self.logger.error("User with email %s not found", email)
+            raise UserNotFoundException(email)
+
+        return {
+            "user_id": user.id,
+            "name": user.name,
+            "age": user.age,
+            "email": user.email,
+            "password_hash": user.password_hash
+        }

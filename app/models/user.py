@@ -4,6 +4,7 @@ class UserRequest(BaseModel):
     name: str
     age: int
     email: EmailStr
+    password: str
 
     @field_validator("email")
     @classmethod
@@ -35,3 +36,13 @@ class UserDetailResponse(BaseModel):
     name: str
     age: int
     email: str
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class LoginResponse(BaseModel):
+    user_id: int
+    name: str
+    email: str  
