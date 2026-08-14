@@ -45,3 +45,12 @@ def delete_user(
     service=Depends(get_user_service)
 ):
     return service.delete_user(user_id)
+
+@router.put(
+    "/{user_id}", status_code=status.HTTP_200_OK, response_model=UserResponse)
+def update_user(
+    user_id: int,
+    user: UserRequest,
+    service=Depends(get_user_service)
+):
+    return service.update_user(user_id, user)

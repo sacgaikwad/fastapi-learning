@@ -37,7 +37,11 @@ class UserService:
     def create_user(self, user: UserRequest) -> UserResponse:
         # Business logic
         self.logger.info("Creating user with name: %s", user.name)
-        self.repository.create_user(user)
-        return UserResponse(
-            user_id=1
-        )
+        user_created = self.repository.create_user(user)
+        return UserResponse(user_id=user_created.id)
+
+    def update_user(self, user_id: int, user: UserRequest) -> UserResponse:
+        # Business logic
+        self.logger.info("Updating user with ID: %d", user_id)
+        user_updated = self.repository.update_user(user_id, user)
+        return UserResponse(user_id=user_updated.id)
