@@ -1,6 +1,5 @@
 import uvicorn
 from fastapi import FastAPI
-
 from app.exceptions.user import UserNotFoundException
 from app.exceptions.product import ProductNotFoundException
 from app.exceptions.handlers import product_not_found_handler, user_not_found_handler
@@ -22,9 +21,7 @@ app.include_router(product_router)
 def home():
     return {"message": "Hello World"}
 
-
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(
         "app.main:app",
         host="127.0.0.1",
