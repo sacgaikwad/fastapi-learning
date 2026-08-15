@@ -12,6 +12,11 @@ from app.models.user import (
     LoginResponse
 )
 
+from app.core.security import (
+    verify_password,
+    create_access_token
+)
+
 import logging
 
 class UserService:
@@ -69,10 +74,12 @@ class UserService:
             self.logger.error("Invalid password for user with email: %s", login_request.email)
             raise InvalidCredentialsException()
 
+
+        access_token = create_access_token(user_id=user["user_id"])
+
         self.logger.info("User with email %s logged in successfully", login_request.email)
 
         return LoginResponse(
-                user_id=user["user_id"],
-                name=user["name"],
-                email=user["email"]
+                access_token=access_token,
+                token_type="bearer"
             )

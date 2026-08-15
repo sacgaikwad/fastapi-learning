@@ -43,6 +43,5 @@ class LoginRequest(BaseModel):
     password: str
 
 class LoginResponse(BaseModel):
-    user_id: int
-    name: str
-    email: str  
+    access_token: str | None = None
+    token_type: str | None = None

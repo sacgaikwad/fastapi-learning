@@ -7,7 +7,7 @@ from app.models.user import (
     LoginRequest,
     LoginResponse
 )
-
+from app.dependencies.auth import get_current_user
 from app.dependencies.user import get_user_service
 
 router = APIRouter(
@@ -21,6 +21,7 @@ router = APIRouter(
 )
 def get_user(
     user_id: int,
+    current_user_id: int = Depends(get_current_user),
     service=Depends(get_user_service)
 ):
     return service.get_user(user_id)
@@ -33,6 +34,7 @@ def get_user(
 )
 def create_user(
     user: UserRequest,
+    current_user_id: int = Depends(get_current_user),
     service=Depends(get_user_service)
 ):
     return service.create_user(user)
@@ -44,6 +46,7 @@ def create_user(
 )
 def delete_user(
     user_id: int,
+    current_user_id:int = Depends(get_current_user),
     service=Depends(get_user_service)
 ):
     return service.delete_user(user_id)
@@ -53,6 +56,7 @@ def delete_user(
 def update_user(
     user_id: int,
     user: UserRequest,
+    current_user_id:int =  Depends(get_current_user),
     service=Depends(get_user_service)
 ):
     return service.update_user(user_id, user)
