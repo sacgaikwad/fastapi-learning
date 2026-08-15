@@ -1,41 +1,25 @@
-# FastAPI Learning Project 🚀
+FastAPI Learning Project 🚀
 
-A hands-on project to learn **FastAPI and Python backend development** by building a structured REST API application.
+A hands-on project to learn FastAPI and Python backend development
+by building a structured REST API application.
 
-I am primarily coming from a **.NET / C# background**, so this project is also helping me understand how familiar backend concepts such as routing, validation, services, dependency injection, repositories, database access, exception handling, and authentication are implemented in the Python ecosystem.
+I am primarily coming from a .NET / C# background, so this project
+is also helping me understand how familiar backend concepts such as
+routing, validation, services, exception handling, dependency injection,
+authentication, and authorization are implemented in the Python
+ecosystem.
 
-The goal is not just to build APIs, but to understand **how the different backend components work together**.
-
-## GitHub Repository
+GitHub Repository
 
 https://github.com/sacgaikwad/fastapi-learning
 
----
+Project Structure
 
-# Project Structure
-
-```text
 fastapi-learning/
 │
 ├── app/
 │   ├── __init__.py
 │   ├── main.py
-│   │
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── logging.py
-│   │   └── security.py
-│   │
-│   ├── database/
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   ├── database.py
-│   │   ├── dependencies.py
-│   │   ├── init_db.py
-│   │   │
-│   │   └── models/
-│   │       ├── __init__.py
-│   │       └── user.py
 │   │
 │   ├── routers/
 │   │   ├── __init__.py
@@ -53,20 +37,13 @@ fastapi-learning/
 │   │   └── handlers.py
 │   │
 │   ├── dependencies/
-│   │   ├── __init__.py
+│   │   ├── auth.py
 │   │   └── user.py
-│   │
-│   ├── repositories/
-│   │   ├── __init__.py
-│   │   └── user_repository.py
 │   │
 │   └── services/
 │       ├── __init__.py
 │       ├── user_service.py
 │       └── product_service.py
-│
-├── data/
-│   └── app.db
 │
 ├── tests/
 │   ├── __init__.py
@@ -75,17 +52,11 @@ fastapi-learning/
 ├── .gitignore
 ├── requirements.txt
 └── README.md
-```
 
-> The project structure will continue to evolve as new concepts are introduced.
+Architecture
 
----
+The project follows a simple layered architecture:
 
-# Architecture
-
-The project currently follows a layered architecture:
-
-```text
                     Client
                       │
                       │ HTTP Request
@@ -94,890 +65,547 @@ The project currently follows a layered architecture:
                 │   Router    │
                 └──────┬──────┘
                        │
+                       │ Depends()
+                       ▼
+              Authentication
+                       │
                        ▼
                 ┌─────────────┐
                 │   Service   │
                 └──────┬──────┘
                        │
                        ▼
-                ┌─────────────┐
-                │ Repository  │
-                └──────┬──────┘
+                 Business Logic
                        │
                        ▼
-                 SQLAlchemy
-                       │
-                       ▼
-                Database Session
-                       │
-                       ▼
-                     SQLite
-```
+                    Database
 
-This architecture is intentionally similar to patterns commonly used in .NET applications.
+Router
 
----
+APIRouter is used to organize and group related API endpoints.
 
-# Router Layer
+It is conceptually similar to a Controller in ASP.NET Core.
 
-`APIRouter` is used to organize and group related API endpoints.
+Service Layer
 
-It is conceptually similar to a **Controller** in ASP.NET Core.
+The service layer contains business logic and keeps it separate from the
+API routes.
+
+This is similar to the Service Layer commonly used in .NET applications.
+
+Dependency Injection
+
+FastAPI provides dependency injection through Depends().
 
 Example:
 
-```python
+def get_user(
+    user_id: int,
+    current_user_id: int = Depends(get_current_user),
+    service=Depends(get_user_service)
+):
+    return service.get_user(user_id)
+
+Dependencies are resolved by FastAPI before the route function executes.
+
+Current dependency examples:
+
+get_current_user - JWT authentication
+
+get_user_service - User service dependency
+
+Models
+
+The project uses Pydantic models for request and response data.
+
+Example:
+
+class UserRequest(BaseModel):
+    name: str
+    age: int
+    email: EmailStr
+
+Pydantic is used for:
+
+Request validation
+
+Response models
+
+Type validation
+
+Custom field validation
+
+Exception Handling
+
+Custom exceptions are separated from the routers and services.
+
+exceptions/
+├── user.py
+└── handlers.py
+
+A service or router can raise a custom exception:
+
+raise UserNotFoundException(user_id)
+
+The FastAPI application then uses an exception handler to convert the
+exception into an appropriate HTTP response.
+
+Service
+   │
+   │ raise exception
+   ▼
+Custom Exception
+   │
+   ▼
+Exception Handler
+   │
+   ▼
+HTTP Response
+
+JWT Authentication
+
+JWT authentication has been added to the project to protect user APIs.
+
+The authentication flow is:
+
+              POST /users/login
+                      │
+                      ▼
+             Validate credentials
+                      │
+                      ▼
+             Create JWT Token
+                      │
+                      ▼
+                Access Token
+                      │
+                      ▼
+      Authorization: Bearer <JWT>
+                      │
+                      ▼
+             get_current_user()
+                      │
+                      ▼
+                 jwt.decode()
+                      │
+              ┌───────┴────────┐
+              │                │
+            Valid            Invalid
+              │                │
+              ▼                ▼
+       current_user_id        401
+              │
+              ▼
+        Protected API
+
+Creating the JWT
+
+The access token contains the authenticated user's ID in the sub claim
+and an expiration time.
+
+Example:
+
+payload = {
+    "sub": str(user_id),
+    "exp": expire
+}
+
+return jwt.encode(
+    payload,
+    SECRET_KEY,
+    algorithm=ALGORITHM
+)
+
+The token is signed using the configured SECRET_KEY and ALGORITHM.
+
+Getting the Current User
+
+The project uses a FastAPI dependency to extract and validate the Bearer
+token:
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(
+        bearer_scheme
+    )
+):
+    token = credentials.credentials
+
+    payload = jwt.decode(
+        token,
+        SECRET_KEY,
+        algorithms=[ALGORITHM]
+    )
+
+    user_id = payload.get("sub")
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+
+    return int(user_id)
+
+The dependency returns the ID of the authenticated user.
+
+Protecting an Endpoint
+
+An endpoint becomes authenticated by adding:
+
+current_user_id: int = Depends(get_current_user)
+
+Example:
+
 @router.get(
     "/{user_id}",
     response_model=UserDetailResponse
 )
 def get_user(
     user_id: int,
+    current_user_id: int = Depends(get_current_user),
     service=Depends(get_user_service)
 ):
     return service.get_user(user_id)
-```
 
-Current routers:
+FastAPI executes get_current_user() before executing get_user().
 
-- `user.py` - User-related APIs
-- `product.py` - Product-related APIs
+If the JWT is missing or invalid, the request is rejected and the route
+function is not executed.
 
----
+Authentication vs Authorization
 
-# Service Layer
+Authentication answers:
 
-The service layer contains business logic and keeps it separate from the API routes.
+Who are you?
 
-Current services:
+The JWT dependency identifies the current user:
 
-- `user_service.py`
-- `product_service.py`
+JWT
+ ↓
+get_current_user()
+ ↓
+current_user_id
 
-Example:
+Authorization answers:
 
-```text
-Router
-   │
-   ▼
-UserService
-   │
-   ▼
-UserRepository
-```
+What are you allowed to do?
 
-The service layer does not directly deal with SQLAlchemy queries.
+Authorization/role checks have not yet been implemented. The next
+step is to add authorization rules such as ownership and role-based
+access.
 
----
+API Endpoints
 
-# Repository Layer
+Users
 
-The repository layer is responsible for database operations.
+Method   Endpoint             Authentication
 
-The User Repository currently handles:
+GET      /users/{user_id}   Required
+POST     /users             Required
+DELETE   /users/{user_id}   Required
+PUT      /users/{user_id}   Required
+POST     /users/login       Not required
 
-- Create
-- Read
-- Update
-- Delete
-- Database queries
-- Transactions
-- Rollback
-- Database-related logging
+The login endpoint is public because a user must obtain a JWT before
+accessing protected endpoints.
 
-Example:
+Products
 
-```python
-user = (
-    self.db
-    .query(User)
-    .filter(User.id == user_id)
-    .first()
-)
-```
+Product-related endpoints are implemented through:
 
-This keeps database-specific logic separate from business logic.
-
----
-
-# Dependency Injection
-
-FastAPI's `Depends()` is used for dependency injection.
-
-Example:
-
-```python
-def get_user_service(
-    repository: UserRepository = Depends(get_user_repository)
-):
-    return UserService(repository)
-```
-
-Database sessions are also injected:
-
-```python
-def get_db():
-    db = SessionLocal()
-
-    try:
-        yield db
-    finally:
-        db.close()
-```
-
-Current dependency flow:
-
-```text
-Router
-   │
-   ▼
-get_user_service()
-   │
-   ▼
-get_user_repository()
-   │
-   ▼
-get_db()
-   │
-   ▼
-SQLAlchemy Session
-```
-
-This is conceptually similar to Dependency Injection in ASP.NET Core.
-
----
-
-# Database
-
-The project currently uses:
-
-- **SQLite**
-- **SQLAlchemy ORM**
-
-SQLite was intentionally selected because it does not require a separate database server.
-
-The database is stored locally:
-
-```text
-data/app.db
-```
-
----
-
-# SQLAlchemy
-
-SQLAlchemy is used as the ORM/database toolkit.
-
-The project currently uses:
-
-- SQLAlchemy Engine
-- Declarative Base
-- ORM Models
-- Database Sessions
-- Session Factory
-- Queries
-- Transactions
-- Commit
-- Rollback
-
-Basic flow:
-
-```text
-FastAPI
-   ↓
-Service
-   ↓
-Repository
-   ↓
-SQLAlchemy Session
-   ↓
-SQLAlchemy ORM
-   ↓
-SQLite
-```
-
----
-
-# Database Models
-
-Database models are kept separately from Pydantic request/response models.
-
-Conceptually:
-
-```text
-Pydantic Model
-      │
-      ├── Request validation
-      └── Response validation
-
-
-SQLAlchemy Model
-      │
-      └── Database table mapping
-```
-
-The current SQLAlchemy User model maps to:
-
-```text
-users
-├── id
-├── name
-├── age
-└── email
-```
-
----
-
-# CRUD Operations
-
-The User API currently supports complete CRUD operations.
-
-| Operation | HTTP Method | Endpoint | Status |
-|---|---|---|---|
-| Create | POST | `/users` | ✅ |
-| Read | GET | `/users/{user_id}` | ✅ |
-| Update | PUT | `/users/{user_id}` | ✅ |
-| Delete | DELETE | `/users/{user_id}` | ✅ |
-
----
-
-## Create User
-
-```http
-POST /users
-```
-
-Flow:
-
-```text
-UserRequest
-    ↓
-UserService
-    ↓
-UserRepository
-    ↓
-db.add()
-    ↓
-db.commit()
-    ↓
-db.refresh()
-    ↓
-SQLite
-```
-
-Example SQLAlchemy operations:
-
-```python
-db.add(user)
-db.commit()
-db.refresh(user)
-```
-
----
-
-## Get User
-
-```http
-GET /users/{user_id}
-```
-
-The repository queries the database:
-
-```python
-user = (
-    self.db
-    .query(User)
-    .filter(User.id == user_id)
-    .first()
-)
-```
-
-If the user does not exist:
-
-```python
-raise UserNotFoundException(user_id)
-```
-
----
-
-## Update User
-
-```http
-PUT /users/{user_id}
-```
-
-SQLAlchemy tracks the existing ORM object.
-
-Example:
-
-```python
-user.name = new_name
-user.age = new_age
-user.email = new_email
-
-self.db.commit()
-```
-
----
-
-## Delete User
-
-```http
-DELETE /users/{user_id}
-```
-
-The repository removes the ORM object:
-
-```python
-self.db.delete(user)
-self.db.commit()
-```
-
-If the user does not exist:
-
-```python
-raise UserNotFoundException(user_id)
-```
-
----
-
-# Transactions and Rollback
-
-Database operations are performed inside transactions.
-
-Example:
-
-```python
-try:
-    self.db.delete(user)
-    self.db.commit()
-
-except Exception:
-    self.db.rollback()
-    raise
-```
-
-If a database operation fails:
-
-```text
-Database Operation
-       ↓
-     Error
-       ↓
-   rollback()
-       ↓
-Session returned to usable state
-```
-
-This helps maintain database consistency.
-
----
-
-# Logging
-
-The project contains centralized logging functionality.
-
-Example:
-
-```python
-self.logger.info(
-    "Getting user with ID: %d",
-    user_id
-)
-```
-
-Logging is currently used for:
-
-- Service initialization
-- User creation
-- User retrieval
-- User update
-- User deletion
-- Database operations
-- Errors
-
-Example:
-
-```text
-2026-08-14 15:18:49
-app.services.user_service
-INFO
-User created with ID: 1
-```
-
-For errors, `logger.exception()` can be used when a traceback is useful:
-
-```python
-self.logger.exception(
-    "Error deleting user with ID %d",
-    user_id
-)
-```
-
----
-
-# Exception Handling
-
-Custom exceptions are separated from routers and services.
-
-```text
-exceptions/
-├── user.py
-└── handlers.py
-```
-
-Example:
-
-```python
-raise UserNotFoundException(user_id)
-```
-
-Application flow:
-
-```text
-Service / Repository
-        │
-        │ raise exception
-        ▼
-Custom Exception
-        │
-        ▼
-Exception Handler
-        │
-        ▼
-HTTP Response
-```
-
----
-
-# Pydantic
-
-Pydantic is used for API request and response validation.
-
-Example:
-
-```python
-class UserRequest(BaseModel):
-    name: str
-    age: int
-    email: EmailStr
-```
-
-Pydantic provides:
-
-- Request validation
-- Response validation
-- Type validation
-- Field validation
-- Custom validation
-
----
-
-# API Endpoints
-
-## Users
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/users/{user_id}` | Get user |
-| POST | `/users` | Create user |
-| PUT | `/users/{user_id}` | Update user |
-| DELETE | `/users/{user_id}` | Delete user |
-
-## Products
-
-Product-related APIs are currently implemented through:
-
-```text
 Product Router
       ↓
 Product Service
-```
 
-Additional database models will be introduced incrementally.
+Authentication Request Flow
 
----
+Example protected request:
 
-# Swagger Documentation
+DELETE /users/10
+Authorization: Bearer <access_token>
+
+The request passes through:
+
+HTTP Request
+     │
+     ▼
+HTTPBearer
+     │
+     ▼
+get_current_user()
+     │
+     ▼
+Extract Bearer Token
+     │
+     ▼
+jwt.decode()
+     │
+     ▼
+current_user_id
+     │
+     ▼
+delete_user()
+
+Swagger Documentation
 
 FastAPI automatically generates interactive API documentation.
 
 Open:
 
-```text
 http://127.0.0.1:8000/docs
-```
 
 Swagger UI allows you to:
 
-- View available APIs
-- View request models
-- View response models
-- Test APIs directly
-- View HTTP status codes
-- Explore validation errors
+View available APIs
 
----
+View request models
 
-# ReDoc
+View response models
+
+Test APIs directly from the browser
+
+Test authenticated APIs using a Bearer token
+
+See HTTP status codes
+
+Explore validation errors
+
+ReDoc
 
 FastAPI also provides ReDoc documentation.
 
 Open:
 
-```text
 http://127.0.0.1:8000/redoc
-```
 
----
-
-# OpenAPI Specification
+OpenAPI Specification
 
 The generated OpenAPI specification is available at:
 
-```text
 http://127.0.0.1:8000/openapi.json
-```
 
----
-
-# Prerequisites
+Prerequisites
 
 Before running the project, make sure the following are installed:
 
-- Python 3.10+
-- pip
-- Git
-- VS Code (recommended)
+Python 3.10+
+
+pip
+
+Git
+
+VS Code (recommended)
 
 Verify the installations:
 
-```powershell
 python --version
 pip --version
 git --version
-```
 
----
+Getting Started
 
-# Getting Started
+1. Clone the repository
 
-## 1. Clone the repository
-
-```powershell
 git clone https://github.com/sacgaikwad/fastapi-learning.git
-```
 
-## 2. Navigate to the project
+2. Navigate to the project
 
-```powershell
 cd fastapi-learning
-```
 
-## 3. Create a virtual environment
+3. Create a virtual environment
 
-```powershell
 python -m venv .venv
-```
 
-## 4. Activate the virtual environment
+4. Activate the virtual environment
 
 For Windows PowerShell:
 
-```powershell
 .venv\Scripts\Activate.ps1
-```
 
-After activation, you should see something similar to:
+5. Install dependencies
 
-```text
-(.venv) PS D:\Learning\Python\fastapi-learning>
-```
-
-## 5. Install dependencies
-
-```powershell
 pip install -r requirements.txt
-```
 
-## 6. Run the application
+6. Run the application
 
-From the project root:
+python -m app.main
 
-```powershell
+Alternatively:
+
 uvicorn app.main:app --reload
-```
 
 The application will be available at:
 
-```text
 http://127.0.0.1:8000
-```
 
----
+Running the Application Flow
 
-# Database
+Clone Repository
+       ↓
+Create Virtual Environment
+       ↓
+Activate Virtual Environment
+       ↓
+Install Dependencies
+       ↓
+Run FastAPI Application
+       ↓
+Open Swagger
+       ↓
+Login
+       ↓
+Get JWT
+       ↓
+Authorize Protected APIs
+       ↓
+Test APIs
 
-The project currently uses SQLite.
-
-Database file:
-
-```text
-data/app.db
-```
-
-The database schema is currently created using SQLAlchemy.
-
-> **Alembic migrations are intentionally postponed** for a later stage of the learning journey.
-
----
-
-# Stop the Application
+Stop the Application
 
 Press:
 
-```text
 CTRL + C
-```
 
 to stop the development server.
 
----
-
-# Deactivate Virtual Environment
+Deactivate Virtual Environment
 
 When finished:
 
-```powershell
 deactivate
-```
 
----
+Technologies
 
-# Technologies
+Python
 
-- Python
-- FastAPI
-- Uvicorn
-- Pydantic
-- SQLAlchemy
-- SQLite
-- Git
-- VS Code
+FastAPI
 
----
+Uvicorn
 
-# .NET vs FastAPI
+Pydantic
 
-Coming from a .NET background, several architectural concepts feel familiar.
+PyJWT
 
-| ASP.NET Core | FastAPI |
-|---|---|
-| Controller | APIRouter |
-| Action Method | Route Function |
-| DTO | Pydantic Model |
-| Model Validation | Pydantic Validation |
-| Service | Service |
-| Repository | Repository |
-| DbContext | SQLAlchemy Session |
-| Entity Framework | SQLAlchemy ORM |
-| Middleware | Middleware |
-| Dependency Injection | `Depends()` |
-| Kestrel | Uvicorn |
+Git
 
-The implementation is different, but many backend architectural concepts are similar.
+VS Code
 
----
+.NET vs FastAPI
 
-# Learning Progress
+Coming from a .NET background, some of the architecture feels familiar.
+
+ASP.NET Core                        FastAPI
+
+Controller                          APIRouter
+Action Method                       Route Function
+DTO                                 Pydantic Model
+Model Validation                    Pydantic Validation
+Service                             Service
+Repository                          Repository
+Middleware                          Middleware
+Dependency Injection                Depends()
+Authentication Middleware/Handler   Security Dependencies
+JWT Authentication                  JWT + FastAPI Security
+Kestrel                             Uvicorn
+
+The implementation is different, but the overall backend architectural
+concepts are quite similar.
+
+Learning Progress
 
 This project is being developed incrementally while learning FastAPI.
 
-## Completed
+Completed
 
-- [x] FastAPI application
-- [x] Uvicorn
-- [x] GET APIs
-- [x] POST APIs
-- [x] PUT APIs
-- [x] DELETE APIs
-- [x] APIRouter
-- [x] Project/package structure
-- [x] `__init__.py`
-- [x] Pydantic request models
-- [x] Pydantic response models
-- [x] Model validation
-- [x] Custom field validation
-- [x] Custom email validation
-- [x] HTTP status codes
-- [x] Custom exceptions
-- [x] Custom exception handlers
-- [x] Service layer
-- [x] Repository pattern
-- [x] Dependency Injection
-- [x] FastAPI `Depends()`
-- [x] Logging
-- [x] SQLite
-- [x] SQLAlchemy Engine
-- [x] SQLAlchemy ORM models
-- [x] SQLAlchemy Session
-- [x] Database dependency
-- [x] User database integration
-- [x] Create user
-- [x] Get user
-- [x] Update user
-- [x] Delete user
-- [x] Database transactions
-- [x] Transaction rollback
-- [x] Swagger / OpenAPI
+FastAPI application
 
----
+Uvicorn
 
-# Intentionally Postponed
+GET APIs
 
-## Alembic Migrations
+POST APIs
 
-Alembic is an important database migration tool, but it has been intentionally postponed until the SQLAlchemy and database concepts are more familiar.
+DELETE APIs
 
-It will be introduced later when the project starts dealing with schema evolution.
+PUT APIs
 
----
+APIRouter
 
-# Next Topics
+Project/package structure
 
-The next major module is **Authentication and Authorization**.
+__init__.py
 
-Planned learning path:
+Pydantic request models
 
-```text
-Authentication
-      ↓
-Password Hashing
-      ↓
-User Registration
-      ↓
-Login
-      ↓
-JWT Access Token
-      ↓
-Authentication Dependency
-      ↓
-Protect APIs
-      ↓
+Pydantic response models
+
+Model validation
+
+Custom email validation
+
+HTTP status codes
+
+Custom exceptions
+
+Custom exception handlers
+
+Service layer
+
+User service
+
+Product service
+
+Dependency Injection
+
+Depends()
+
+JWT access token generation
+
+Bearer token authentication
+
+get_current_user dependency
+
+Protected user endpoints
+
+Swagger / OpenAPI
+
+Login endpoint
+
+Next Topics
+
 Authorization
-      ↓
-Roles & Permissions
-```
 
-After authentication and authorization, planned topics include:
+Role-based authorization
 
-- [ ] Middleware
-- [ ] Configuration management
-- [ ] Testing
-- [ ] Async APIs
-- [ ] Alembic migrations
-- [ ] Production deployment
+Ownership-based authorization
 
----
+Database integration
 
-# Authentication & Authorization Roadmap
+Repository pattern
 
-Authentication will be introduced step by step rather than implementing everything at once.
+Async APIs
 
-## 1. Password Hashing
+Middleware
 
-Never store plain-text passwords.
+Configuration management
 
-```text
-Password
-   ↓
-Hashing Algorithm
-   ↓
-Password Hash
-   ↓
-Database
-```
+Testing
 
-## 2. User Registration
+Production deployment
 
-A user will register with credentials.
+Goal
 
-```text
-Registration Request
-       ↓
-Validate Input
-       ↓
-Hash Password
-       ↓
-Save User
-```
+The goal of this project is to learn FastAPI from the fundamentals and
+gradually build a production-style Python REST API architecture.
 
-## 3. Login
+Rather than only following tutorials, I am building the project
+incrementally and documenting the concepts as I learn them.
 
-```text
-Login Request
-       ↓
-Find User
-       ↓
-Verify Password
-       ↓
-Generate Token
-```
+Learning Approach
 
-## 4. JWT Authentication
-
-```text
-Login
-  ↓
-Validate Credentials
-  ↓
-Generate JWT
-  ↓
-Return Access Token
-```
-
-## 5. Protect APIs
-
-Existing APIs will eventually require authentication:
-
-```text
-GET /users/1
-      ↓
-Validate JWT
-      ↓
-Authenticated?
-   /       \
- Yes        No
-  ↓          ↓
-Service    HTTP 401
-```
-
-## 6. Authorization
-
-After authentication, we will learn authorization:
-
-```text
-Authentication
-      ↓
-Who are you?
-      ↓
-Authorization
-      ↓
-What are you allowed to do?
-```
-
----
-
-# Learning Approach
-
-```text
 Learn a Concept
       ↓
-Understand Why
-      ↓
 Implement It
-      ↓
-Test It
       ↓
 Understand the Architecture
       ↓
@@ -986,18 +614,6 @@ Add It to the Project
 Document It
       ↓
 Move to the Next Concept
-```
 
-The project is intentionally being developed step by step rather than building everything at once.
-
----
-
-# Goal
-
-The goal of this project is to learn FastAPI and Python backend development from the fundamentals and gradually build a production-style REST API architecture.
-
-Rather than only following tutorials, I am building the project incrementally and documenting the concepts as I learn them.
-
-Coming from a .NET / C# background, the project also serves as a way to compare familiar backend concepts with their Python/FastAPI equivalents.
-
-Still learning, still experimenting, and adding to the project step by step. 🚀
+Still learning, still experimenting, and adding to the project step by
+step. 🚀
