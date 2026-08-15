@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr, field_validator
 
+from app.models.role import UserRole
+
 class UserRequest(BaseModel):
     name: str
     age: int
@@ -36,6 +38,7 @@ class UserDetailResponse(BaseModel):
     name: str
     age: int
     email: str
+    role: UserRole
 
 
 class LoginRequest(BaseModel):

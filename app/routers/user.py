@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
+from app.models.role import UserRole
 from app.models.user import (
     UserRequest,
     UserResponse,
@@ -7,7 +8,7 @@ from app.models.user import (
     LoginRequest,
     LoginResponse
 )
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, require_roles
 from app.dependencies.user import get_user_service
 
 router = APIRouter(
@@ -21,7 +22,7 @@ router = APIRouter(
 )
 def get_user(
     user_id: int,
-    current_user_id: int = Depends(get_current_user),
+    current_user_id: int = Depends(require_roles(UserRole.USER,UserRole.SUPPORT,UserRole.MANAGER,UserRole.ADMIN,UserRole.SUPER_ADMIN)),
     service=Depends(get_user_service)
 ):
     return service.get_user(user_id)
@@ -34,8 +35,8 @@ def get_user(
 )
 def create_user(
     user: UserRequest,
-    current_user_id: int = Depends(get_current_user),
-    service=Depends(get_user_service)
+    service=Depends(get_user_service),
+    current_user_id:int = Depends(require_roles(UserRole.ADMIN, UserRole.SUPER_ADMIN))
 ):
     return service.create_user(user)
 
@@ -46,7 +47,7 @@ def create_user(
 )
 def delete_user(
     user_id: int,
-    current_user_id:int = Depends(get_current_user),
+    current_user_id:int = Depends(require_roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)),
     service=Depends(get_user_service)
 ):
     return service.delete_user(user_id)

@@ -1,8 +1,7 @@
 from app.exceptions.auth import InvalidCredentialsException
 from app.exceptions.user import UserNotFoundException
+from app.models.role import UserRole
 from app.repositories.user_repository import UserRepository
-from app.core.security import hash_password
-from app.core.security import verify_password
 
 from app.models.user import (
     UserRequest,
@@ -14,7 +13,9 @@ from app.models.user import (
 
 from app.core.security import (
     verify_password,
-    create_access_token
+    create_access_token,
+    hash_password,
+    verify_password
 )
 
 import logging
@@ -34,7 +35,8 @@ class UserService:
             user_id=user["user_id"],
             name=user["name"],
             age=user["age"],
-            email=user["email"]
+            email=user["email"],
+            role=user["role"]
         )
 
     def delete_user(self, user_id: int) -> None:
@@ -52,7 +54,7 @@ class UserService:
 
         password_hashed = hash_password(user.password)
 
-        user_created = self.repository.create_user(user, password_hashed)
+        user_created = self.repository.create_user(user, password_hashed,UserRole.USER)
         return UserResponse(user_id=user_created.id)
 
     def update_user(self, user_id: int, user: UserRequest) -> UserResponse:

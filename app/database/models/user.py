@@ -32,3 +32,5 @@ class User(Base):
     )
 
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    role:Mapped[str] = mapped_column(String(255),nullable=False)

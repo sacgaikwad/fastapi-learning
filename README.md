@@ -1,720 +1,510 @@
 # 🚀 FastAPI Learning Project
 
-> 🐍 A hands-on journey to learn **FastAPI + Python backend development** by building a structured REST API.
+> 🐍 A hands-on journey to learn **FastAPI + Python backend
+> development** by building a structured REST API.
 
+```{=html}
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/FastAPI-Learning-009688?logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/PyJWT-JWT%20Authentication-000000?logo=jsonwebtokens&logoColor=white" alt="JWT">
-  <img src="https://img.shields.io/badge/Architecture-Layered-6A5ACD" alt="Architecture">
-  <img src="https://img.shields.io/badge/Status-Learning-F2C94C" alt="Status">
+```
+`<img src="https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white">`{=html}
+`<img src="https://img.shields.io/badge/FastAPI-Learning-009688?logo=fastapi&logoColor=white">`{=html}
+`<img src="https://img.shields.io/badge/PyJWT-JWT%20Authentication-000000">`{=html}
+`<img src="https://img.shields.io/badge/RBAC-Role%20Based%20Authorization-6A5ACD">`{=html}
+`<img src="https://img.shields.io/badge/Status-Learning-F2C94C">`{=html}
+```{=html}
 </p>
+```
+I am primarily coming from a **.NET / C# background**, so this project
+is helping me understand how familiar backend concepts are implemented
+in the Python ecosystem.
 
-I am primarily coming from a **.NET / C# background**, so this project is also helping me understand how familiar backend concepts such as routing, validation, services, exception handling, dependency injection, authentication, and authorization are implemented in the Python ecosystem.
+🔗 **GitHub:** https://github.com/sacgaikwad/fastapi-learning
 
-🔗 **GitHub:** [github.com/sacgaikwad/fastapi-learning](https://github.com/sacgaikwad/fastapi-learning)
+------------------------------------------------------------------------
 
----
+# 🎯 Learning Goal
 
-## 🎯 Learning Goal
+The goal is not just to learn FastAPI syntax, but to understand how to
+build a maintainable backend application.
 
-The goal is not just to learn FastAPI syntax, but to understand how to build a maintainable backend application.
-
-```text
-        🐍 Python
-           │
-           ▼
-       ⚡ FastAPI
-           │
-           ▼
-      📦 Pydantic
-           │
-           ▼
-       💉 Depends()
-           │
-           ▼
-       🔐 JWT Auth
-           │
-           ▼
-       🔒 Authorization
-           │
-           ▼
-       🗄️ Database
-           │
-           ▼
-       🧪 Testing
-           │
-           ▼
-       🚀 Production
+``` text
+Python → FastAPI → Pydantic → Depends()
+                    ↓
+              JWT Authentication
+                    ↓
+              RBAC Authorization
+                    ↓
+                Database
+                    ↓
+                 Testing
+                    ↓
+               Production
 ```
 
----
+------------------------------------------------------------------------
 
 # 🏗️ Architecture
 
-The project follows a simple layered architecture:
-
-```text
-                         Client
-                           │
-                           │ HTTP Request
-                           ▼
-                    ┌─────────────┐
-                    │   Router    │
-                    └──────┬──────┘
-                           │
-                    Depends() / Auth
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │   Service   │
-                    └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  Repository │
-                    └──────┬──────┘
-                           │
-                           ▼
-                       Database
+``` text
+Client
+  │
+  ▼
+Router
+  │
+  │ Depends() / Authentication / Authorization
+  ▼
+Service
+  │
+  ▼
+Repository
+  │
+  ▼
+Database
 ```
 
-### 🛣️ Router
+The project follows a layered architecture similar to patterns commonly
+used in ASP.NET Core.
 
-`APIRouter` is used to organize and group related API endpoints.
-
-Conceptually, it is similar to a **Controller** in ASP.NET Core.
-
-### 🧠 Service Layer
-
-The service layer contains business logic and keeps it separate from API routes.
-
-### 🗃️ Repository Layer
-
-The repository layer will isolate data-access logic from the service layer as database integration is introduced.
-
----
+------------------------------------------------------------------------
 
 # 📁 Project Structure
 
-```text
+``` text
 fastapi-learning/
-│
 ├── app/
-│   ├── __init__.py
 │   ├── main.py
-│   │
 │   ├── routers/
-│   │   ├── __init__.py
 │   │   ├── user.py
 │   │   └── product.py
-│   │
 │   ├── models/
-│   │   ├── __init__.py
 │   │   ├── user.py
+│   │   ├── role.py
 │   │   └── error.py
-│   │
-│   ├── exceptions/
-│   │   ├── __init__.py
-│   │   ├── user.py
-│   │   └── handlers.py
-│   │
+│   ├── database/
+│   │   ├── models/
+│   │   │   └── user.py
+│   │   ├── dependencies.py
+│   │   └── connection.py
 │   ├── dependencies/
 │   │   ├── auth.py
 │   │   └── user.py
-│   │
-│   └── services/
-│       ├── __init__.py
-│       ├── user_service.py
-│       └── product_service.py
-│
+│   ├── services/
+│   │   └── user_service.py
+│   ├── repositories/
+│   │   └── user_repository.py
+│   ├── exceptions/
+│   └── core/
+├── data/
+│   └── app.db
 ├── tests/
-│   ├── __init__.py
-│   └── test_user.py
-│
-├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
 
----
+------------------------------------------------------------------------
 
 # 💉 Dependency Injection
 
 FastAPI provides dependency injection through `Depends()`.
 
-Example:
+Current dependency examples:
 
-```python
-def get_user(
-    user_id: int,
-    current_user_id: int = Depends(get_current_user),
-    service=Depends(get_user_service)
-):
-    return service.get_user(user_id)
-```
+  Dependency              Purpose
+  ----------------------- --------------------------
+  🔐 `get_current_user`   JWT authentication
+  👤 `get_user_service`   User service
+  🔒 `require_roles`      Role-based authorization
+  🗄️ `get_db`             Database session
 
-FastAPI resolves dependencies before executing the route function.
-
-### Current dependencies
-
-| Dependency | Purpose |
-|---|---|
-| 🔐 `get_current_user` | JWT authentication |
-| 👤 `get_user_service` | User service |
-| 📦 Other service dependencies | Business logic |
-
----
-
-# 📦 Pydantic Models
-
-The project uses **Pydantic** models for request and response data.
-
-Example:
-
-```python
-class UserRequest(BaseModel):
-    name: str
-    age: int
-    email: EmailStr
-```
-
-Pydantic provides:
-
-- ✅ Request validation
-- ✅ Response models
-- ✅ Type validation
-- ✅ Custom field validation
-
----
-
-# ⚠️ Exception Handling
-
-Custom exceptions are separated from routers and services.
-
-```text
-exceptions/
-├── user.py
-└── handlers.py
-```
-
-Example:
-
-```python
-raise UserNotFoundException(user_id)
-```
-
-The FastAPI application converts custom exceptions into appropriate HTTP responses.
-
-```text
-Service
-   │
-   │ raise exception
-   ▼
-Custom Exception
-   │
-   ▼
-Exception Handler
-   │
-   ▼
-HTTP Response
-```
-
----
+------------------------------------------------------------------------
 
 # 🔐 JWT Authentication
 
-JWT authentication has been added to protect user APIs.
+JWT authentication protects user APIs.
 
 ## 🔑 Authentication Flow
 
-```text
-                    👤 User
-                      │
-                      ▼
-              POST /users/login
-                      │
-                      ▼
-             Validate Credentials
-                      │
-                      ▼
-                🎟️ JWT Token
-                      │
-                      ▼
-       Authorization: Bearer <JWT>
-                      │
-                      ▼
-             get_current_user()
-                      │
-                      ▼
-                 jwt.decode()
-                      │
-               ┌──────┴──────┐
-               │             │
-             Valid         Invalid
-               │             │
-               ▼             ▼
-      current_user_id      ❌ 401
-               │
-               ▼
-          Protected API
+``` text
+POST /users/login
+       │
+       ▼
+Validate Credentials
+       │
+       ▼
+Create JWT
+       │
+       ▼
+Authorization: Bearer <JWT>
+       │
+       ▼
+get_current_user()
+       │
+       ▼
+jwt.decode()
+       │
+   ┌───┴───┐
+   │       │
+ Valid   Invalid
+   │       │
+   ▼       ▼
+User ID   401
+   │
+   ▼
+Protected API
 ```
 
----
+The JWT contains the authenticated user's ID in the `sub` claim and an
+expiration time.
 
-## 🎟️ Creating the JWT
-
-The access token contains the authenticated user's ID in the `sub` claim and an expiration time.
-
-```python
+``` python
 payload = {
     "sub": str(user_id),
     "exp": expire
 }
-
-return jwt.encode(
-    payload,
-    SECRET_KEY,
-    algorithm=ALGORITHM
-)
 ```
 
-The token is signed using the configured `SECRET_KEY` and `ALGORITHM`.
+The role is stored in the database rather than being trusted from the
+client.
 
----
+------------------------------------------------------------------------
 
-## 🔍 Getting the Current User
-
-The current implementation uses FastAPI's `HTTPBearer` security dependency.
-
-```python
-bearer_scheme = HTTPBearer()
-
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(
-        bearer_scheme
-    )
-):
-    token = credentials.credentials
-
-    payload = jwt.decode(
-        token,
-        SECRET_KEY,
-        algorithms=[ALGORITHM]
-    )
-
-    user_id = payload.get("sub")
-
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials"
-        )
-
-    return int(user_id)
-```
-
-### 🔄 What happens here?
-
-```text
-Authorization Header
-        │
-        ▼
-   HTTPBearer()
-        │
-        ▼
-HTTPAuthorizationCredentials
-        │
-        ▼
-credentials.credentials
-        │
-        ▼
-       JWT
-        │
-        ▼
-    jwt.decode()
-        │
-        ▼
-     payload
-        │
-        ▼
-       sub
-        │
-        ▼
-current_user_id
-```
-
----
-
-# 🛡️ Protecting an Endpoint
-
-An endpoint becomes authenticated by adding:
-
-```python
-current_user_id: int = Depends(get_current_user)
-```
-
-Example:
-
-```python
-@router.get(
-    "/{user_id}",
-    response_model=UserDetailResponse
-)
-def get_user(
-    user_id: int,
-    current_user_id: int = Depends(get_current_user),
-    service=Depends(get_user_service)
-):
-    return service.get_user(user_id)
-```
-
-FastAPI executes `get_current_user()` **before** executing `get_user()`.
-
-If the JWT is missing or invalid:
-
-```text
-Request
-  │
-  ▼
-get_current_user()
-  │
-  ├── ❌ Invalid → 401 Unauthorized
-  │
-  └── ✅ Valid
-         │
-         ▼
-      get_user()
-```
-
----
-
-# 🔓 Public vs 🔐 Protected APIs
-
-Current user API security:
-
-| Method | Endpoint | Security |
-|---|---|---|
-| 🔐 GET | `/users/{user_id}` | Authentication required |
-| 🔐 POST | `/users` | Authentication required |
-| 🔐 DELETE | `/users/{user_id}` | Authentication required |
-| 🔐 PUT | `/users/{user_id}` | Authentication required |
-| 🌐 POST | `/users/login` | Public |
-
-### Why is login public?
-
-A user does not have a JWT before logging in.
-
-```text
-/login
-  │
-  ▼
-Validate username/password
-  │
-  ▼
-Generate JWT
-  │
-  ▼
-Client receives JWT
-  │
-  ▼
-Use JWT for protected APIs
-```
-
----
-
-# 🔐 Authentication vs Authorization
-
-This is an important distinction.
-
-### 👤 Authentication
+# 🔒 Role-Based Authorization (RBAC)
 
 Authentication answers:
 
 > **Who are you?**
 
-```text
-JWT
- ↓
-get_current_user()
- ↓
-current_user_id
-```
-
-### 🔒 Authorization
-
 Authorization answers:
 
 > **What are you allowed to do?**
 
-For example:
+The project now implements **Role-Based Access Control (RBAC)**.
 
-```text
-current_user_id
-       │
-       ▼
-   Check role
-       │
-   ┌───┴────┐
-   │        │
- ADMIN     USER
-   │        │
-   ▼        ▼
- Allow    Deny
+## 👤 User Roles
+
+``` python
+class UserRole(str, Enum):
+    SUPER_ADMIN = "SUPER_ADMIN"
+    ADMIN = "ADMIN"
+    MANAGER = "MANAGER"
+    SUPPORT = "SUPPORT"
+    USER = "USER"
 ```
 
-🚧 **Authorization is the next topic to implement.**
+The database stores the role:
 
-The current project authenticates users, but role-based and ownership-based authorization have not yet been implemented.
-
----
-
-# 🧪 Example Protected Request
-
-```http
-DELETE /users/10
-Authorization: Bearer <access_token>
+``` python
+role: Mapped[str] = mapped_column(
+    String(255),
+    nullable=False
+)
 ```
 
-Flow:
+New users receive the default role:
 
-```text
+``` text
+USER
+```
+
+The role is assigned server-side and is not part of `UserRequest`.
+
+------------------------------------------------------------------------
+
+# 🧩 Reusable `require_roles()`
+
+Authorization is implemented as a reusable FastAPI dependency instead of
+scattering role checks across endpoints.
+
+``` python
+def require_roles(*allowed_roles: UserRole):
+
+    def roles_checker(
+        current_user_id: int = Depends(get_current_user),
+        service=Depends(get_user_service)
+    ):
+        current_user = service.get_user(current_user_id)
+
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions"
+            )
+
+        return current_user
+
+    return roles_checker
+```
+
+An endpoint can declare multiple allowed roles:
+
+``` python
+Depends(
+    require_roles(
+        UserRole.ADMIN,
+        UserRole.SUPER_ADMIN
+    )
+)
+```
+
+## 🔄 Authorization Flow
+
+``` text
 HTTP Request
-     │
-     ▼
- HTTPBearer
-     │
-     ▼
+      │
+      ▼
+require_roles(...)
+      │
+      ▼
 get_current_user()
-     │
-     ▼
-Extract JWT
-     │
-     ▼
-jwt.decode()
-     │
-     ▼
+      │
+      ▼
+Validate JWT
+      │
+      ▼
 current_user_id
-     │
-     ▼
-delete_user()
+      │
+      ▼
+UserService.get_user()
+      │
+      ▼
+UserRepository.get_user()
+      │
+      ▼
+Database
+      │
+      ▼
+current_user.role
+      │
+   ┌──┴──┐
+   │     │
+Allowed Denied
+   │     │
+   ▼     ▼
+ API    403
 ```
 
----
+------------------------------------------------------------------------
+
+# 🛡️ 401 vs 403
+
+### 🔴 401 Unauthorized
+
+Authentication failed.
+
+Examples:
+
+-   Missing JWT
+-   Invalid JWT
+-   Expired JWT
+
+``` text
+"I don't know who you are."
+```
+
+### 🟠 403 Forbidden
+
+Authentication succeeded, but the user does not have the required role.
+
+``` text
+"I know who you are,
+but you are not allowed to do this."
+```
+
+------------------------------------------------------------------------
+
+# 🧪 RBAC Testing
+
+The first role-protected endpoint is:
+
+``` http
+DELETE /users/{user_id}
+```
+
+Allowed roles:
+
+``` text
+ADMIN
+SUPER_ADMIN
+```
+
+Tested behavior:
+
+  Authentication   Role            Result
+  ---------------- ------------- --------
+  No JWT           ---             🔴 401
+  Valid JWT        USER            🟠 403
+  Valid JWT        MANAGER         🟠 403
+  Valid JWT        ADMIN           🟢 204
+  Valid JWT        SUPER_ADMIN     🟢 204
+
+Example endpoint:
+
+``` python
+@router.delete(
+    "/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_user(
+    user_id: int,
+    current_user=Depends(
+        require_roles(
+            UserRole.ADMIN,
+            UserRole.SUPER_ADMIN
+        )
+    ),
+    service=Depends(get_user_service)
+):
+    return service.delete_user(user_id)
+```
+
+------------------------------------------------------------------------
+
+# 🔓 Public vs 🔐 Protected APIs
+
+  Method      Endpoint             Security
+  ----------- -------------------- -------------------------
+  🔐 GET      `/users/{user_id}`   Authentication required
+  🔐 POST     `/users`             Authentication required
+  🔐 DELETE   `/users/{user_id}`   Authentication + RBAC
+  🔐 PUT      `/users/{user_id}`   Authentication required
+  🌐 POST     `/users/login`       Public
+
+------------------------------------------------------------------------
 
 # 📚 API Documentation
 
-## Swagger UI
+### Swagger UI
 
-Open:
-
-```text
+``` text
 http://127.0.0.1:8000/docs
 ```
 
-Swagger provides:
+### ReDoc
 
-- 📋 API listing
-- 🧩 Request models
-- 📤 Response models
-- 🧪 Interactive API testing
-- 🔐 Authentication testing
-- ⚠️ Validation errors
-- 📄 OpenAPI documentation
-
-## ReDoc
-
-```text
+``` text
 http://127.0.0.1:8000/redoc
 ```
 
-## OpenAPI JSON
+### OpenAPI JSON
 
-```text
+``` text
 http://127.0.0.1:8000/openapi.json
 ```
 
----
+------------------------------------------------------------------------
 
 # ▶️ Getting Started
 
-## 1️⃣ Clone the repository
-
-```powershell
+``` powershell
 git clone https://github.com/sacgaikwad/fastapi-learning.git
-```
-
-## 2️⃣ Navigate to the project
-
-```powershell
 cd fastapi-learning
-```
 
-## 3️⃣ Create a virtual environment
-
-```powershell
 python -m venv .venv
-```
-
-## 4️⃣ Activate the virtual environment
-
-For Windows PowerShell:
-
-```powershell
 .venv\Scripts\Activate.ps1
-```
 
-## 5️⃣ Install dependencies
-
-```powershell
 pip install -r requirements.txt
-```
 
-## 6️⃣ Run the application
-
-```powershell
-python -m app.main
-```
-
-Or:
-
-```powershell
 uvicorn app.main:app --reload
 ```
 
 Application:
 
-```text
+``` text
 http://127.0.0.1:8000
 ```
 
----
-
-# 🔄 Application Learning Flow
-
-```text
-📥 Learn Concept
-      │
-      ▼
-💻 Implement
-      │
-      ▼
-🧠 Understand Architecture
-      │
-      ▼
-🧪 Test
-      │
-      ▼
-📝 Document
-      │
-      ▼
-🚀 Move to Next Concept
-```
-
----
+------------------------------------------------------------------------
 
 # 📊 Learning Progress
 
-| Topic | Status |
-|---|:---:|
-| 🐍 Python basics | ✅ |
-| ⚡ FastAPI basics | ✅ |
-| 🛣️ APIRouter | ✅ |
-| 📦 Pydantic | ✅ |
-| 🔎 Request validation | ✅ |
-| 📤 Response models | ✅ |
-| ⚠️ Custom exceptions | ✅ |
-| 🧩 Exception handlers | ✅ |
-| 🧠 Service layer | ✅ |
-| 💉 Dependency Injection | ✅ |
-| 🔗 `Depends()` | ✅ |
-| 🎟️ JWT token generation | ✅ |
-| 🔐 JWT authentication | ✅ |
-| 🛡️ Protected endpoints | ✅ |
-| 🔑 Login | ✅ |
-| 🔒 Role-based authorization | 🔜 |
-| 👤 Ownership authorization | 🔜 |
-| 🗄️ Database integration | ⏳ |
-| 🗃️ Repository pattern | ⏳ |
-| ⚡ Async APIs | ⏳ |
-| 🧱 Middleware | ⏳ |
-| ⚙️ Configuration management | ⏳ |
-| 🧪 Testing | ⏳ |
-| 🚢 Production deployment | ⏳ |
+  Topic                                Status
+  ----------------------------------- --------
+  🐍 Python basics                       ✅
+  ⚡ FastAPI basics                      ✅
+  🛣️ APIRouter                           ✅
+  📦 Pydantic                            ✅
+  🔎 Request validation                  ✅
+  📤 Response models                     ✅
+  ⚠️ Custom exceptions                   ✅
+  🧩 Exception handlers                  ✅
+  🧠 Service layer                       ✅
+  🗃️ Repository pattern                  ✅
+  🗄️ SQLAlchemy / SQLite                 ✅
+  💉 Dependency Injection                ✅
+  🔗 `Depends()`                         ✅
+  🎟️ JWT token generation                ✅
+  🔐 JWT authentication                  ✅
+  🛡️ Protected endpoints                 ✅
+  🔑 Login                               ✅
+  👤 User roles                          ✅
+  🔒 Role-based authorization            ✅
+  🧩 Reusable `require_roles()`          ✅
+  🧪 RBAC testing                        ✅
+  👤 Ownership authorization             🔜
+  🔐 Permission-based authorization      🔜
+  ⚡ Async APIs                          ⏳
+  🧱 Middleware                          ⏳
+  ⚙️ Configuration management            ⏳
+  🧪 Automated testing                   ⏳
+  🚢 Production deployment               ⏳
 
-### Legend
-
-- ✅ Completed
-- 🔜 Next
-- ⏳ Planned
-
----
+------------------------------------------------------------------------
 
 # 🆚 .NET vs FastAPI
 
-Coming from a .NET background, many architectural concepts are familiar.
+  ASP.NET Core           FastAPI
+  ---------------------- ---------------------------
+  Controller             APIRouter
+  Action Method          Route Function
+  DTO                    Pydantic Model
+  Model Validation       Pydantic Validation
+  Service                Service
+  Repository             Repository
+  Dependency Injection   `Depends()`
+  JWT Authentication     JWT + Security Dependency
+  Authorization Policy   Dependency-based RBAC
+  Kestrel                Uvicorn
 
-| ASP.NET Core | FastAPI |
-|---|---|
-| 🎮 Controller | 🛣️ APIRouter |
-| ⚙️ Action Method | 🐍 Route Function |
-| 📦 DTO | 📦 Pydantic Model |
-| ✅ Model Validation | ✅ Pydantic Validation |
-| 🧠 Service | 🧠 Service |
-| 🗃️ Repository | 🗃️ Repository |
-| 💉 Dependency Injection | 💉 `Depends()` |
-| 🔐 JWT Authentication | 🔐 JWT + Security Dependency |
-| ⚡ Kestrel | ⚡ Uvicorn |
-
-The implementation differs, but the core backend architecture is surprisingly similar.
-
----
+------------------------------------------------------------------------
 
 # 🛠️ Technologies
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Pydantic-E92063?logo=pydantic&logoColor=white" alt="Pydantic">
-  <img src="https://img.shields.io/badge/Uvicorn-2C2C2C" alt="Uvicorn">
-  <img src="https://img.shields.io/badge/PyJWT-000000" alt="PyJWT">
-  <img src="https://img.shields.io/badge/VS%20Code-007ACC?logo=visualstudiocode&logoColor=white" alt="VS Code">
-</p>
+-   Python
+-   FastAPI
+-   Pydantic
+-   SQLAlchemy
+-   SQLite
+-   Uvicorn
+-   PyJWT
+-   VS Code
 
----
+------------------------------------------------------------------------
 
 # 🎯 Next Step
 
-## 🔒 Authorization
-
-The next major topic is:
-
-```text
-JWT Authentication
-        ↓
-Identify Current User
-        ↓
-Retrieve User / Role
-        ↓
-Check Permission
-        ↓
-Allow / Deny Request
+``` text
+Role-Based Authorization ✅
+        │
+        ▼
+Ownership Authorization 🔜
+        │
+        ▼
+Permission-Based Authorization 🔜
+        │
+        ▼
+Fine-Grained Authorization
 ```
 
-We will build this using FastAPI dependencies so that authorization logic stays reusable and clean.
-
----
+------------------------------------------------------------------------
 
 # 🙌 Learning Philosophy
 
-> **Don't just learn the framework. Understand what the framework is doing for you.**
+> **Don't just learn the framework. Understand what the framework is
+> doing for you.**
 
-The project is being built incrementally while learning FastAPI.
-
-Every concept is:
-
-```text
+``` text
 Learn → Implement → Test → Understand → Document
 ```
 
-Still learning, still experimenting, and building one concept at a time. 🚀🐍
+Still learning, still experimenting, and building one concept at a time.
+🚀🐍

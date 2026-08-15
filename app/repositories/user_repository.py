@@ -1,6 +1,7 @@
 import logging
 from app.database.models.user import User
 from app.exceptions.user import UserNotFoundException
+from app.models.role import UserRole
 from app.models.user import UserRequest
 from sqlalchemy.orm import Session
 
@@ -19,13 +20,20 @@ class UserRepository:
         if user is None:
             self.logger.error("User with ID %d not found", user_id)
             raise UserNotFoundException(user_id)
-
+        
+        print(
+            "DATABASE USER:",
+            user.id,
+            user.email,
+            user.role
+        )
         # Database access
         return {
             "user_id": user_id,
             "name": user.name,
             "age": user.age,
-            "email": user.email
+            "email": user.email,
+            "role": user.role
         }
 
     def delete_user(self, user_id: int):
@@ -47,11 +55,11 @@ class UserRepository:
             self.logger.error("Error deleting user with ID %d: %s", user_id, str(e))
             raise e
 
-    def create_user(self, user: UserRequest, password_hashed: str):
+    def create_user(self, user: UserRequest, password_hashed: str,role: UserRole):
 
         self.logger.info("Creating user in database with email: %s",user.email)
 
-        db_user = User(name =user.name, age=user.age, email=user.email, password_hash=password_hashed)
+        db_user = User(name =user.name, age=user.age, email=user.email, password_hash=password_hashed, role=role)
         self.db.add(db_user)
         self.db.commit()
         self.db.refresh(db_user)
@@ -94,5 +102,6 @@ class UserRepository:
             "name": user.name,
             "age": user.age,
             "email": user.email,
-            "password_hash": user.password_hash
+            "password_hash": user.password_hash,
+            "role": user.role
         }

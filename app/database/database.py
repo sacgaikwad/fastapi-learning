@@ -13,6 +13,8 @@ DATA_DIR.mkdir(exist_ok=True)
 
 DATABASE_URL = f"sqlite:///{DATA_DIR / 'app.db'}"
 
+print("DATABASE:", DATA_DIR / "app.db")
+
 engine = create_engine(
     DATABASE_URL
 )
